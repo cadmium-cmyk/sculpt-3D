@@ -1,3 +1,5 @@
+import React from 'react';
+import { Paintbrush, Sliders, AlertTriangle, FlipHorizontal } from 'lucide-react';
 import type { ToolType } from '../../types';
 import { getToolDefinition } from '../../services/tools/toolDefinitions';
 
@@ -12,7 +14,7 @@ interface SculptingControlsProps {
   onSymmetryChange: (axis: 'x' | 'y' | 'z', enabled: boolean) => void;
 }
 
-export function SculptingControls({
+export const SculptingControls: React.FC<SculptingControlsProps> = ({
   currentTool,
   brushSize,
   brushStrength,
@@ -21,7 +23,7 @@ export function SculptingControls({
   onBrushSizeChange,
   onBrushStrengthChange,
   onSymmetryChange,
-}: SculptingControlsProps) {
+}) => {
   const toolDef = getToolDefinition(currentTool);
 
   if (!toolDef.isSculptingTool) {
@@ -29,124 +31,131 @@ export function SculptingControls({
   }
 
   return (
-    <div style={{
+    <div className="adw-card" style={{
       position: 'absolute',
-      top: 20,
-      left: 20,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      padding: '15px',
-      borderRadius: '8px',
-      color: 'white',
-      fontFamily: 'monospace',
-      minWidth: '250px'
+      top: 16,
+      left: 16,
+      width: '280px',
+      padding: '16px',
+      zIndex: 100,
     }}>
-      <h3 style={{ margin: '0 0 15px 0', fontSize: '14px' }}>
-        {toolDef.label} Tool Controls
-      </h3>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        marginBottom: '16px',
+        paddingBottom: '8px',
+        borderBottom: '1px solid var(--card-border-color)'
+      }}>
+        <Paintbrush size={18} color="var(--accent-color)" />
+        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>
+          {toolDef.label} Brush
+        </h3>
+      </div>
 
-      {!selectedObjectId && (
+      {!selectedObjectId ? (
         <div style={{
-          backgroundColor: 'rgba(255,165,0,0.2)',
-          border: '1px solid orange',
-          padding: '10px',
-          borderRadius: '4px',
-          marginBottom: '15px',
-          fontSize: '12px'
+          backgroundColor: 'rgba(229, 165, 10, 0.12)',
+          border: '1px solid var(--warning-color)',
+          color: 'var(--warning-color)',
+          padding: '12px',
+          borderRadius: '8px',
+          fontSize: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
         }}>
-          ⚠️ Select an object to start sculpting
+          <AlertTriangle size={18} />
+          <span>Select an object in the viewport to enable sculpting.</span>
         </div>
-      )}
+      ) : (
+        <div className="adw-preferences-group">
+          {/* Brush Parameters */}
+          <div className="adw-preferences-group-title">Brush Parameters</div>
 
-      {selectedObjectId && (
-        <>
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Brush Size: {brushSize.toFixed(2)}</span>
-              <input
-                type="range"
-                min="0.1"
-                max="5"
-                step="0.1"
-                value={brushSize}
-                onChange={(e) => onBrushSizeChange(parseFloat(e.target.value))}
-                style={{ width: '150px', marginLeft: '10px' }}
-              />
-            </label>
+          <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sliders size={14} />
+                <span className="adw-action-row-label">Brush Size</span>
+              </div>
+              <span className="adw-action-row-subtitle" style={{ fontWeight: 600 }}>
+                {brushSize.toFixed(2)}
+              </span>
+            </div>
+            <input
+              type="range"
+              className="adw-slider"
+              min="0.1"
+              max="5"
+              step="0.1"
+              value={brushSize}
+              onChange={(e) => onBrushSizeChange(parseFloat(e.target.value))}
+            />
           </div>
 
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span>Strength: {(brushStrength * 100).toFixed(0)}%</span>
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.1"
-                value={brushStrength}
-                onChange={(e) => onBrushStrengthChange(parseFloat(e.target.value))}
-                style={{ width: '150px', marginLeft: '10px' }}
-              />
-            </label>
+          <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Sliders size={14} />
+                <span className="adw-action-row-label">Strength</span>
+              </div>
+              <span className="adw-action-row-subtitle" style={{ fontWeight: 600 }}>
+                {(brushStrength * 100).toFixed(0)}%
+              </span>
+            </div>
+            <input
+              type="range"
+              className="adw-slider"
+              min="0.1"
+              max="1"
+              step="0.1"
+              value={brushStrength}
+              onChange={(e) => onBrushStrengthChange(parseFloat(e.target.value))}
+            />
           </div>
 
-          <div style={{ marginBottom: '12px' }}>
-            <label style={{ display: 'block', marginBottom: '8px' }}>
-              <strong>Symmetry:</strong>
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Symmetry Axes */}
+          <div className="adw-preferences-group-title" style={{ marginTop: '12px' }}>Symmetry Planes</div>
+
+          <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FlipHorizontal size={14} />
+              <span className="adw-action-row-label">Mirror Axes</span>
+            </div>
+            <div className="adw-segmented-control" style={{ width: '100%' }}>
               {(['x', 'y', 'z'] as const).map(axis => (
                 <button
                   key={axis}
                   onClick={() => onSymmetryChange(axis, !symmetryAxes[axis])}
-                  style={{
-                    flex: 1,
-                    padding: '6px',
-                    backgroundColor: symmetryAxes[axis] ? '#4a90e2' : '#2c2c2c',
-                    border: 'none',
-                    borderRadius: '4px',
-                    color: 'white',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    fontSize: '12px',
-                    fontWeight: symmetryAxes[axis] ? 'bold' : 'normal',
-                    boxShadow: symmetryAxes[axis] ? '0 0 8px rgba(74, 144, 226, 0.5)' : 'none',
-                  }}
+                  className={`adw-segmented-button ${symmetryAxes[axis] ? 'active' : ''}`}
+                  style={{ flex: 1, textTransform: 'uppercase', fontWeight: 600 }}
                   title={`Mirror on ${axis.toUpperCase()}-axis`}
                 >
                   {axis.toUpperCase()}
                 </button>
               ))}
             </div>
-            {(symmetryAxes.x || symmetryAxes.y || symmetryAxes.z) && (
-              <div style={{
-                fontSize: '10px',
-                color: '#4a90e2',
-                marginTop: '4px',
-                textAlign: 'center'
-              }}>
-                Mirroring on {[
-                  symmetryAxes.x && 'X',
-                  symmetryAxes.y && 'Y',
-                  symmetryAxes.z && 'Z'
-                ].filter(Boolean).join(', ')} axis
-              </div>
-            )}
           </div>
 
+          {/* Shortcut guide */}
           <div style={{
-            borderTop: '1px solid rgba(255,255,255,0.2)',
-            paddingTop: '10px',
-            marginTop: '10px',
             fontSize: '11px',
-            color: '#aaa'
+            opacity: 0.7,
+            marginTop: '8px',
+            lineHeight: 1.5,
+            padding: '8px',
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            borderRadius: '6px'
           }}>
-            <div>Shortcuts:</div>
-            <div>[ / ] - Brush size</div>
-            <div>Shift+[ / Shift+] - Strength</div>
-            <div>X / Y / Z - Toggle symmetry</div>
+            <div><strong>Shortcuts:</strong></div>
+            <div>[ / ] — Adjust size</div>
+            <div>Shift + [ / ] — Adjust strength</div>
+            <div>X / Y / Z — Toggle mirror planes</div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
-}
+};

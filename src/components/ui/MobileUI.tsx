@@ -1,26 +1,35 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import {
+  MousePointer,
+  PlusCircle,
+  Move,
+  Maximize2,
+  Paintbrush,
+  Undo2,
+  Redo2,
+  Settings,
+  X,
+  Trash2,
+  Plus,
+  Minus,
+  Sliders,
+  Layers
+} from 'lucide-react';
 import type { ToolType, PrimitiveType } from '../../types';
 
 interface MobileUIProps {
-  // Tool state
   currentTool: ToolType;
   setCurrentTool: (tool: ToolType) => void;
   selectedPrimitive: PrimitiveType;
   setSelectedPrimitive: (primitive: PrimitiveType) => void;
-
-  // Sculpting controls
   brushSize: number;
   setBrushSize: (size: number) => void;
   brushStrength: number;
   setBrushStrength: (strength: number) => void;
   symmetryAxes: { x: boolean; y: boolean; z: boolean };
   setSymmetryAxes: (axes: { x: boolean; y: boolean; z: boolean }) => void;
-
-  // Render mode
   selectedRenderMode: 'shaded' | 'mesh';
   onRenderModeChange: (mode: 'shaded' | 'mesh') => void;
-
-  // Actions
   onUndo: () => void;
   onRedo: () => void;
   canUndo: boolean;
@@ -29,7 +38,7 @@ interface MobileUIProps {
   hasSelection: boolean;
 }
 
-export function MobileUI({
+export const MobileUI: React.FC<MobileUIProps> = ({
   currentTool,
   setCurrentTool,
   selectedPrimitive,
@@ -48,30 +57,28 @@ export function MobileUI({
   canRedo,
   onDeleteSelected,
   hasSelection,
-}: MobileUIProps) {
+}) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showPrimitives, setShowPrimitives] = useState(false);
   const [showSculptControls, setShowSculptControls] = useState(false);
   const [showSculptTools, setShowSculptTools] = useState(false);
 
-  const mainTools: { type: ToolType; icon: string; label: string }[] = [
-    { type: 'select', icon: '↖', label: 'Select' },
-    { type: 'add-primitive', icon: '◯', label: 'Add' },
-    { type: 'move', icon: '✥', label: 'Move' },
-    { type: 'scale', icon: '⟷', label: 'Scale' },
+  const mainTools: { type: ToolType; icon: React.ReactNode; label: string }[] = [
+    { type: 'select', icon: <MousePointer size={18} />, label: 'Select' },
+    { type: 'add-primitive', icon: <PlusCircle size={18} />, label: 'Add' },
+    { type: 'move', icon: <Move size={18} />, label: 'Move' },
+    { type: 'scale', icon: <Maximize2 size={18} />, label: 'Scale' },
   ];
 
-  const sculptTools: { type: ToolType; icon: string; label: string }[] = [
-    { type: 'add', icon: '+', label: 'Add' },
-    { type: 'subtract', icon: '-', label: 'Subtract' },
-    { type: 'push', icon: '→', label: 'Push' },
+  const sculptTools: { type: ToolType; icon: React.ReactNode; label: string }[] = [
+    { type: 'add', icon: <Plus size={18} />, label: 'Add Material' },
+    { type: 'subtract', icon: <Minus size={18} />, label: 'Subtract' },
+    { type: 'push', icon: <Move size={18} />, label: 'Push' },
   ];
 
   const primitives: PrimitiveType[] = ['sphere', 'cube', 'cylinder', 'cone', 'torus'];
+  const isSculptTool = ['add', 'subtract', 'push'].includes(currentTool);
 
-  const isSculptTool = currentTool === 'add' || currentTool === 'subtract' || currentTool === 'push';
-
-  // Close primitive selector when tool changes away from add-primitive
   useEffect(() => {
     if (currentTool !== 'add-primitive') {
       setShowPrimitives(false);
@@ -79,14 +86,30 @@ export function MobileUI({
   }, [currentTool]);
 
   return (
-    <div className="mobile-ui">
-      {/* Compact top toolbar */}
-      <div className="mobile-toolbar-top">
-        <div className="mobile-tool-buttons">
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 1000,
+      pointerEvents: 'none',
+    }}>
+      {/* Header bar for mobile */}
+      <div className="adw-card" style={{
+        margin: '8px',
+        padding: '6px 10px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        pointerEvents: 'auto',
+        borderRadius: 'var(--adw-radius-pill)',
+      }}>
+        {/* Tool selector */}
+        <div style={{ display: 'flex', gap: '4px' }}>
           {mainTools.map(tool => (
             <button
               key={tool.type}
-              className={`mobile-tool-btn ${currentTool === tool.type ? 'active' : ''}`}
+              className={`adw-btn pill ${currentTool === tool.type ? 'suggested-action' : 'flat'}`}
               onClick={() => {
                 setCurrentTool(tool.type);
                 if (tool.type === 'add-primitive') {
@@ -96,80 +119,103 @@ export function MobileUI({
                 }
                 setShowSculptTools(false);
               }}
+              style={{ padding: '8px', minWidth: '36px', height: '36px' }}
               title={tool.label}
             >
-              <span className="tool-icon">{tool.icon}</span>
+              {tool.icon}
             </button>
           ))}
 
-          {/* Sculpt tools dropdown button */}
+          {/* Sculpt Tools trigger */}
           <button
-            className={`mobile-tool-btn ${isSculptTool ? 'active' : ''}`}
+            className={`adw-btn pill ${isSculptTool ? 'suggested-action' : 'flat'}`}
             onClick={() => {
               setShowSculptTools(!showSculptTools);
               setShowPrimitives(false);
             }}
-            title="Sculpt"
+            style={{ padding: '8px', minWidth: '36px', height: '36px' }}
+            title="Sculpting Tools"
           >
-            <span className="tool-icon">🎨</span>
+            <Paintbrush size={18} />
           </button>
         </div>
 
-        {/* Quick actions */}
-        <div className="mobile-quick-actions">
+        {/* Action Controls */}
+        <div style={{ display: 'flex', gap: '4px' }}>
           <button
-            className="mobile-action-btn"
+            className="adw-btn pill flat"
             onClick={onUndo}
             disabled={!canUndo}
+            style={{ padding: '8px' }}
           >
-            ↶
+            <Undo2 size={16} />
           </button>
           <button
-            className="mobile-action-btn"
+            className="adw-btn pill flat"
             onClick={onRedo}
             disabled={!canRedo}
+            style={{ padding: '8px' }}
           >
-            ↷
+            <Redo2 size={16} />
           </button>
           <button
-            className="mobile-action-btn"
+            className="adw-btn pill flat"
             onClick={() => setShowSettings(!showSettings)}
+            style={{ padding: '8px' }}
           >
-            ⚙
+            <Settings size={16} />
           </button>
         </div>
       </div>
 
-      {/* Sculpt tools selector (dropdown) */}
+      {/* Sculpting Sub-tools Sheet */}
       {showSculptTools && (
-        <div className="mobile-sculpt-selector">
+        <div className="adw-card" style={{
+          margin: '0 8px 8px 8px',
+          padding: '8px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px',
+          pointerEvents: 'auto',
+          animation: 'adw-pop-in 0.15s ease-out',
+        }}>
           {sculptTools.map(tool => (
             <button
               key={tool.type}
-              className={`mobile-sculpt-tool-btn ${currentTool === tool.type ? 'active' : ''}`}
+              className={`adw-btn ${currentTool === tool.type ? 'suggested-action' : 'flat'}`}
               onClick={() => {
                 setCurrentTool(tool.type);
                 setShowSculptTools(false);
               }}
+              style={{ justifyContent: 'flex-start', padding: '10px 12px' }}
             >
-              <span className="tool-icon">{tool.icon}</span>
-              <span className="tool-label">{tool.label}</span>
+              {tool.icon}
+              <span style={{ fontSize: '13px' }}>{tool.label}</span>
             </button>
           ))}
         </div>
       )}
 
-      {/* Primitive selector (only when add-primitive is active) */}
+      {/* Primitive Shapes Sheet */}
       {showPrimitives && (
-        <div className="mobile-primitive-selector">
+        <div className="adw-card" style={{
+          margin: '0 8px 8px 8px',
+          padding: '8px',
+          display: 'flex',
+          gap: '6px',
+          overflowX: 'auto',
+          pointerEvents: 'auto',
+          animation: 'adw-pop-in 0.15s ease-out',
+        }}>
           {primitives.map(primitive => (
             <button
               key={primitive}
-              className={`mobile-primitive-btn ${selectedPrimitive === primitive ? 'active' : ''}`}
+              className={`adw-btn pill ${selectedPrimitive === primitive ? 'suggested-action' : 'flat'}`}
               onClick={() => {
                 setSelectedPrimitive(primitive);
                 setShowPrimitives(false);
               }}
+              style={{ whiteSpace: 'nowrap', textTransform: 'capitalize', fontSize: '12px' }}
             >
               {primitive}
             </button>
@@ -177,438 +223,146 @@ export function MobileUI({
         </div>
       )}
 
-      {/* Sculpt controls button (only for sculpt tools) */}
+      {/* Sculpt controls toggle */}
       {isSculptTool && (
-        <div className="mobile-sculpt-button-container">
+        <div style={{ margin: '8px', pointerEvents: 'auto' }}>
           <button
-            className="mobile-sculpt-toggle-btn"
+            className="adw-btn adw-card"
             onClick={() => setShowSculptControls(!showSculptControls)}
+            style={{ width: '100%', justifyContent: 'space-between', padding: '10px 14px' }}
           >
-            🎨 Sculpt Controls {showSculptControls ? '▼' : '▶'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sliders size={16} color="var(--accent-color)" />
+              <span>Brush Settings</span>
+            </div>
+            <span>{showSculptControls ? '▲' : '▼'}</span>
           </button>
         </div>
       )}
 
-      {/* Sculpt controls panel (expanded when showSculptControls is true) */}
+      {/* Expanded Sculpt Controls Sheet */}
       {isSculptTool && showSculptControls && (
-        <div className="mobile-sculpt-controls">
-          <div className="mobile-control-group">
-            <label className="mobile-slider-label">
-              Size: {Math.round(brushSize * 100)}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={brushSize * 100}
-              onChange={(e) => setBrushSize(parseInt(e.target.value) / 100)}
-              className="mobile-slider"
-            />
-          </div>
+        <div className="adw-card" style={{
+          margin: '0 8px 8px 8px',
+          padding: '16px',
+          pointerEvents: 'auto',
+          animation: 'adw-pop-in 0.15s ease-out',
+        }}>
+          <div className="adw-preferences-group">
+            <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+              <span className="adw-action-row-label">Size: {Math.round(brushSize * 100)}%</span>
+              <input
+                type="range"
+                className="adw-slider"
+                min="10"
+                max="500"
+                value={brushSize * 100}
+                onChange={(e) => setBrushSize(parseInt(e.target.value) / 100)}
+              />
+            </div>
 
-          <div className="mobile-control-group">
-            <label className="mobile-slider-label">
-              Strength: {Math.round(brushStrength * 100)}%
-            </label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={brushStrength * 100}
-              onChange={(e) => setBrushStrength(parseInt(e.target.value) / 100)}
-              className="mobile-slider"
-            />
-          </div>
+            <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+              <span className="adw-action-row-label">Strength: {Math.round(brushStrength * 100)}%</span>
+              <input
+                type="range"
+                className="adw-slider"
+                min="10"
+                max="100"
+                value={brushStrength * 100}
+                onChange={(e) => setBrushStrength(parseInt(e.target.value) / 100)}
+              />
+            </div>
 
-          <div className="mobile-control-group">
-            <label className="mobile-slider-label">Symmetry:</label>
-            <div className="mobile-symmetry-buttons">
-              <button
-                className={`mobile-symmetry-btn ${symmetryAxes.x ? 'active' : ''}`}
-                onClick={() => setSymmetryAxes({ ...symmetryAxes, x: !symmetryAxes.x })}
-              >
-                X
-              </button>
-              <button
-                className={`mobile-symmetry-btn ${symmetryAxes.y ? 'active' : ''}`}
-                onClick={() => setSymmetryAxes({ ...symmetryAxes, y: !symmetryAxes.y })}
-              >
-                Y
-              </button>
-              <button
-                className={`mobile-symmetry-btn ${symmetryAxes.z ? 'active' : ''}`}
-                onClick={() => setSymmetryAxes({ ...symmetryAxes, z: !symmetryAxes.z })}
-              >
-                Z
-              </button>
+            <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}>
+              <span className="adw-action-row-label">Symmetry Axes</span>
+              <div className="adw-segmented-control" style={{ width: '100%' }}>
+                <button
+                  className={`adw-segmented-button ${symmetryAxes.x ? 'active' : ''}`}
+                  onClick={() => setSymmetryAxes({ ...symmetryAxes, x: !symmetryAxes.x })}
+                  style={{ flex: 1 }}
+                >
+                  X
+                </button>
+                <button
+                  className={`adw-segmented-button ${symmetryAxes.y ? 'active' : ''}`}
+                  onClick={() => setSymmetryAxes({ ...symmetryAxes, y: !symmetryAxes.y })}
+                  style={{ flex: 1 }}
+                >
+                  Y
+                </button>
+                <button
+                  className={`adw-segmented-button ${symmetryAxes.z ? 'active' : ''}`}
+                  onClick={() => setSymmetryAxes({ ...symmetryAxes, z: !symmetryAxes.z })}
+                  style={{ flex: 1 }}
+                >
+                  Z
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Settings panel (hidden by default) */}
+      {/* Mobile Settings Modal Flap */}
       {showSettings && (
-        <div className="mobile-settings-panel">
-          <div className="mobile-settings-header">
-            <h3>Settings</h3>
-            <button
-              className="mobile-close-btn"
-              onClick={() => setShowSettings(false)}
-            >
-              ✕
+        <div className="adw-card" style={{
+          position: 'fixed',
+          top: '60px',
+          right: '8px',
+          left: '8px',
+          maxWidth: '360px',
+          margin: '0 auto',
+          padding: '16px',
+          pointerEvents: 'auto',
+          animation: 'adw-pop-in 0.15s ease-out',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Mobile Settings</h3>
+            <button className="adw-btn flat pill" onClick={() => setShowSettings(false)} style={{ padding: '4px' }}>
+              <X size={16} />
             </button>
           </div>
 
           {hasSelection && (
-            <>
-              <div className="mobile-render-mode">
-                <label className="mobile-settings-label">Render Mode:</label>
-                <div className="mobile-render-buttons">
+            <div className="adw-preferences-group" style={{ marginBottom: '12px' }}>
+              <div className="adw-action-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={14} />
+                  <span className="adw-action-row-label">Render Mode</span>
+                </div>
+                <div className="adw-segmented-control" style={{ width: '100%' }}>
                   <button
-                    className={`mobile-render-btn ${selectedRenderMode === 'shaded' ? 'active' : ''}`}
+                    className={`adw-segmented-button ${selectedRenderMode === 'shaded' ? 'active' : ''}`}
                     onClick={() => onRenderModeChange('shaded')}
+                    style={{ flex: 1 }}
                   >
                     Shaded
                   </button>
                   <button
-                    className={`mobile-render-btn ${selectedRenderMode === 'mesh' ? 'active' : ''}`}
+                    className={`adw-segmented-button ${selectedRenderMode === 'mesh' ? 'active' : ''}`}
                     onClick={() => onRenderModeChange('mesh')}
+                    style={{ flex: 1 }}
                   >
-                    Mesh
+                    Wireframe
                   </button>
                 </div>
               </div>
 
               <button
-                className="mobile-delete-btn"
+                className="adw-btn destructive-action"
                 onClick={() => {
                   onDeleteSelected();
                   setShowSettings(false);
                 }}
+                style={{ width: '100%', padding: '10px', marginTop: '8px' }}
               >
-                Delete Selected Object
+                <Trash2 size={16} />
+                <span>Delete Selected</span>
               </button>
-            </>
+            </div>
           )}
-
-          <div className="mobile-info">
-            <p>Tool: {currentTool}</p>
-            {currentTool === 'add-primitive' && <p>Shape: {selectedPrimitive}</p>}
-            {isSculptTool && <p>Strength: {Math.round(brushStrength * 100)}%</p>}
-          </div>
         </div>
       )}
-
-      <style>{`
-        .mobile-ui {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          z-index: 1000;
-          pointer-events: none;
-        }
-
-        .mobile-ui > * {
-          pointer-events: auto;
-        }
-
-        .mobile-toolbar-top {
-          display: flex;
-          justify-content: space-between;
-          background: rgba(0, 0, 0, 0.8);
-          padding: 8px;
-          backdrop-filter: blur(10px);
-        }
-
-        .mobile-tool-buttons {
-          display: flex;
-          gap: 4px;
-        }
-
-        .mobile-tool-btn {
-          min-width: 40px;
-          height: 40px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          font-size: 18px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          touch-action: manipulation;
-        }
-
-        .mobile-tool-btn.active {
-          background: #2196F3;
-          border-color: #2196F3;
-        }
-
-        .mobile-quick-actions {
-          display: flex;
-          gap: 4px;
-        }
-
-        .mobile-action-btn {
-          width: 40px;
-          height: 40px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          font-size: 20px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .mobile-action-btn:disabled {
-          opacity: 0.3;
-        }
-
-        .mobile-primitive-selector {
-          background: rgba(0, 0, 0, 0.8);
-          padding: 8px;
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          backdrop-filter: blur(10px);
-        }
-
-        .mobile-primitive-btn {
-          padding: 8px 12px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          white-space: nowrap;
-        }
-
-        .mobile-primitive-btn.active {
-          background: #4CAF50;
-          border-color: #4CAF50;
-        }
-
-        .mobile-sculpt-selector {
-          background: rgba(0, 0, 0, 0.9);
-          padding: 8px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          backdrop-filter: blur(10px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-sculpt-tool-btn {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 10px 12px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          text-align: left;
-          font-size: 14px;
-        }
-
-        .mobile-sculpt-tool-btn.active {
-          background: #2196F3;
-          border-color: #2196F3;
-        }
-
-        .mobile-sculpt-tool-btn .tool-icon {
-          font-size: 18px;
-          width: 24px;
-          text-align: center;
-        }
-
-        .mobile-sculpt-tool-btn .tool-label {
-          flex: 1;
-        }
-
-        .mobile-sculpt-button-container {
-          background: rgba(0, 0, 0, 0.8);
-          padding: 8px;
-          backdrop-filter: blur(10px);
-        }
-
-        .mobile-sculpt-toggle-btn {
-          width: 100%;
-          padding: 10px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          font-size: 14px;
-          text-align: left;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-        .mobile-sculpt-controls {
-          background: rgba(0, 0, 0, 0.9);
-          padding: 12px;
-          backdrop-filter: blur(10px);
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .mobile-control-group {
-          margin-bottom: 12px;
-        }
-
-        .mobile-control-group:last-child {
-          margin-bottom: 0;
-        }
-
-        .mobile-slider-label {
-          color: white;
-          font-size: 12px;
-          display: block;
-          margin-bottom: 6px;
-          font-weight: 500;
-        }
-
-        .mobile-slider {
-          width: 100%;
-          height: 30px;
-          -webkit-appearance: none;
-          appearance: none;
-          background: transparent;
-        }
-
-        .mobile-slider::-webkit-slider-track {
-          width: 100%;
-          height: 4px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 2px;
-        }
-
-        .mobile-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          appearance: none;
-          width: 20px;
-          height: 20px;
-          background: white;
-          border-radius: 50%;
-          cursor: pointer;
-        }
-
-        .mobile-symmetry-buttons {
-          display: flex;
-          gap: 8px;
-          margin-top: 8px;
-        }
-
-        .mobile-symmetry-btn {
-          flex: 1;
-          padding: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          font-size: 14px;
-          font-weight: bold;
-          transition: all 0.2s;
-        }
-
-        .mobile-symmetry-btn.active {
-          background: #2196F3;
-          border-color: #2196F3;
-        }
-
-        .mobile-settings-panel {
-          position: fixed;
-          top: 60px;
-          right: 8px;
-          background: rgba(0, 0, 0, 0.9);
-          border-radius: 8px;
-          padding: 12px;
-          min-width: 200px;
-          backdrop-filter: blur(10px);
-        }
-
-        .mobile-settings-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 12px;
-        }
-
-        .mobile-settings-header h3 {
-          color: white;
-          margin: 0;
-          font-size: 14px;
-        }
-
-        .mobile-close-btn {
-          background: transparent;
-          border: none;
-          color: white;
-          font-size: 20px;
-          padding: 0;
-          width: 24px;
-          height: 24px;
-        }
-
-        .mobile-settings-label {
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 12px;
-          display: block;
-          margin-bottom: 6px;
-        }
-
-        .mobile-render-mode {
-          margin-bottom: 12px;
-        }
-
-        .mobile-render-buttons {
-          display: flex;
-          gap: 4px;
-        }
-
-        .mobile-render-btn {
-          flex: 1;
-          padding: 6px 12px;
-          background: rgba(255, 255, 255, 0.1);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 4px;
-          font-size: 12px;
-        }
-
-        .mobile-render-btn.active {
-          background: #2196F3;
-          border-color: #2196F3;
-        }
-
-        .mobile-delete-btn {
-          width: 100%;
-          padding: 8px;
-          background: #f44336;
-          border: none;
-          color: white;
-          border-radius: 4px;
-          margin-bottom: 8px;
-        }
-
-        .mobile-info {
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 12px;
-        }
-
-        .mobile-info p {
-          margin: 4px 0;
-        }
-
-        @media (min-width: 768px) {
-          .mobile-ui {
-            display: none;
-          }
-        }
-      `}</style>
     </div>
   );
-}
+};
