@@ -1,8 +1,10 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, GizmoHelper, GizmoViewport } from '@react-three/drei';
 import * as THREE from 'three';
 import { Scene } from './Scene';
+import { HeaderBar } from '../ui/HeaderBar';
+import { AboutDialog } from '../ui/AboutDialog';
 import { Toolbar } from '../tools/Toolbar';
 import { ObjectSidebar } from '../ui/ObjectSidebar';
 import { SculptingControls } from '../ui/SculptingControls';
@@ -25,6 +27,15 @@ interface SceneObjectData {
 
 export function ModelingCanvas() {
   const isMobile = useIsMobile();
+
+  // Theme & Dialog state
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+  // Sync theme attribute with document root
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   // Controls and tools
   const controlsRef = useRef<any>(null);
@@ -158,135 +169,157 @@ export function ModelingCanvas() {
   const orbitDisablingTools = getOrbitDisablingTools();
 
   return (
-    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
-      <Canvas
-        camera={{ position: [10, 10, 10], fov: 50 }}
-        onClick={handleCanvasClick}
-      >
-        <Scene
-          objects={objects}
-          objectGeometries={objectGeometries}
+    <div style={{ width: '100%', height: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      {/* GNOME Libadwaita Application HeaderBar */}
+      {!isMobile && (
+        <HeaderBar
+          currentTool={currentTool}
           selectedObjectId={selectedObjectId}
-          currentTool={currentTool}
-          selectedPrimitive={selectedPrimitive}
-          brushSize={brushSize}
-          brushStrength={brushStrength}
-          symmetryAxes={symmetryAxes}
-          selectedRenderMode={selectedRenderMode}
-          onSelectObject={handleSelectObject}
-          onPlaceObject={handlePlaceObject}
-          onPositionChange={handleObjectPositionChange}
-          onScaleChange={handleObjectScaleChange}
-          onVertexCountUpdate={(objectId, count) => {
-            setObjectVertexCounts(prev => ({ ...prev, [objectId]: count }));
-          }}
-          onGeometryUpdate={(objectId, geometry) => {
-            setObjectGeometries(prev => ({ ...prev, [objectId]: geometry }));
-          }}
-          onRequestStateSave={saveCurrentState}
-        />
-
-        <OrbitControls
-          ref={controlsRef}
-          enablePan={true}
-          enableRotate={true}
-          enableZoom={true}
-          mouseButtons={{
-            LEFT: orbitDisablingTools.includes(currentTool) ? undefined : THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.ROTATE,
-            RIGHT: THREE.MOUSE.PAN
-          }}
-          touches={{
-            ONE: undefined, // Disable one-finger rotation on mobile
-            TWO: THREE.TOUCH.DOLLY_ROTATE // Two fingers for zoom and rotate
-          }}
-        />
-
-        {!isMobile && (
-          <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-            <GizmoViewport axisColors={['red', 'green', 'blue']} labelColor="black" />
-          </GizmoHelper>
-        )}
-      </Canvas>
-
-      {/* UI Components - Show mobile UI on mobile, desktop UI on desktop */}
-      {isMobile ? (
-        <>
-          <MobileTouchHint />
-          <MobileUI
-          currentTool={currentTool}
-          setCurrentTool={setCurrentTool}
-          selectedPrimitive={selectedPrimitive}
-          setSelectedPrimitive={setSelectedPrimitive}
-          brushSize={brushSize}
-          setBrushSize={setBrushSize}
-          brushStrength={brushStrength}
-          setBrushStrength={setBrushStrength}
-          symmetryAxes={symmetryAxes}
-          setSymmetryAxes={setSymmetryAxes}
-          selectedRenderMode={selectedRenderMode}
-          onRenderModeChange={setSelectedRenderMode}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
           canUndo={canUndo}
           canRedo={canRedo}
-          onDeleteSelected={() => {
-            if (selectedObjectId) {
-              handleDeleteObject(selectedObjectId);
-            }
-          }}
-          hasSelection={selectedObjectId !== null}
-          />
-        </>
-      ) : (
-        <>
-          <UndoRedoControls
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-          />
+          theme={theme}
+          onToolChange={setCurrentTool}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          onToggleTheme={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
+          onOpenAbout={() => setIsAboutOpen(true)}
+        />
+      )}
 
-          <Toolbar
+      {/* Main 3D Canvas Area */}
+      <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
+        <Canvas
+          camera={{ position: [10, 10, 10], fov: 50 }}
+          onClick={handleCanvasClick}
+        >
+          <Scene
+            objects={objects}
+            objectGeometries={objectGeometries}
+            selectedObjectId={selectedObjectId}
             currentTool={currentTool}
             selectedPrimitive={selectedPrimitive}
-            selectedObjectId={selectedObjectId}
-            onToolChange={setCurrentTool}
-            onPrimitiveSelect={setSelectedPrimitive}
-          />
-
-          <ObjectSidebar
-            selectedObjectId={selectedObjectId}
-            objects={objects}
-            selectedRenderMode={selectedRenderMode}
-            objectVertexCounts={objectVertexCounts}
-            onDeselectObject={() => setSelectedObjectId(null)}
-            onDeleteObject={handleDeleteObject}
-            onRenderModeChange={setSelectedRenderMode}
-            onObjectPositionChange={handleObjectPositionChange}
-            onObjectRotationChange={handleObjectRotationChange}
-            onObjectScaleChange={handleObjectScaleChange}
-          />
-
-          <SculptingControls
-            currentTool={currentTool}
             brushSize={brushSize}
             brushStrength={brushStrength}
-            selectedObjectId={selectedObjectId}
             symmetryAxes={symmetryAxes}
-            onBrushSizeChange={setBrushSize}
-            onBrushStrengthChange={setBrushStrength}
-            onSymmetryChange={(axis, enabled) => {
-              setSymmetryAxes(prev => ({ ...prev, [axis]: enabled }));
+            selectedRenderMode={selectedRenderMode}
+            onSelectObject={handleSelectObject}
+            onPlaceObject={handlePlaceObject}
+            onPositionChange={handleObjectPositionChange}
+            onScaleChange={handleObjectScaleChange}
+            onVertexCountUpdate={(objectId, count) => {
+              setObjectVertexCounts(prev => ({ ...prev, [objectId]: count }));
+            }}
+            onGeometryUpdate={(objectId, geometry) => {
+              setObjectGeometries(prev => ({ ...prev, [objectId]: geometry }));
+            }}
+            onRequestStateSave={saveCurrentState}
+          />
+
+          <OrbitControls
+            ref={controlsRef}
+            enablePan={true}
+            enableRotate={true}
+            enableZoom={true}
+            mouseButtons={{
+              LEFT: orbitDisablingTools.includes(currentTool) ? undefined : THREE.MOUSE.ROTATE,
+              MIDDLE: THREE.MOUSE.ROTATE,
+              RIGHT: THREE.MOUSE.PAN
+            }}
+            touches={{
+              ONE: undefined,
+              TWO: THREE.TOUCH.DOLLY_ROTATE
             }}
           />
 
-          <StatusOverlay
-            currentTool={currentTool}
-            selectedPrimitive={selectedPrimitive}
-          />
-        </>
-      )}
+          {!isMobile && (
+            <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
+              <GizmoViewport axisColors={['red', 'green', 'blue']} labelColor="black" />
+            </GizmoHelper>
+          )}
+        </Canvas>
+
+        {/* UI Components - Show mobile UI on mobile, desktop UI on desktop */}
+        {isMobile ? (
+          <>
+            <MobileTouchHint />
+            <MobileUI
+              currentTool={currentTool}
+              setCurrentTool={setCurrentTool}
+              selectedPrimitive={selectedPrimitive}
+              setSelectedPrimitive={setSelectedPrimitive}
+              brushSize={brushSize}
+              setBrushSize={setBrushSize}
+              brushStrength={brushStrength}
+              setBrushStrength={setBrushStrength}
+              symmetryAxes={symmetryAxes}
+              setSymmetryAxes={setSymmetryAxes}
+              selectedRenderMode={selectedRenderMode}
+              onRenderModeChange={setSelectedRenderMode}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onDeleteSelected={() => {
+                if (selectedObjectId) {
+                  handleDeleteObject(selectedObjectId);
+                }
+              }}
+              hasSelection={selectedObjectId !== null}
+            />
+          </>
+        ) : (
+          <>
+            <UndoRedoControls
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={handleUndo}
+              onRedo={handleRedo}
+            />
+
+            <Toolbar
+              currentTool={currentTool}
+              selectedPrimitive={selectedPrimitive}
+              selectedObjectId={selectedObjectId}
+              onToolChange={setCurrentTool}
+              onPrimitiveSelect={setSelectedPrimitive}
+            />
+
+            <ObjectSidebar
+              selectedObjectId={selectedObjectId}
+              objects={objects}
+              selectedRenderMode={selectedRenderMode}
+              objectVertexCounts={objectVertexCounts}
+              onDeselectObject={() => setSelectedObjectId(null)}
+              onDeleteObject={handleDeleteObject}
+              onRenderModeChange={setSelectedRenderMode}
+              onObjectPositionChange={handleObjectPositionChange}
+              onObjectRotationChange={handleObjectRotationChange}
+              onObjectScaleChange={handleObjectScaleChange}
+            />
+
+            <SculptingControls
+              currentTool={currentTool}
+              brushSize={brushSize}
+              brushStrength={brushStrength}
+              selectedObjectId={selectedObjectId}
+              symmetryAxes={symmetryAxes}
+              onBrushSizeChange={setBrushSize}
+              onBrushStrengthChange={setBrushStrength}
+              onSymmetryChange={(axis, enabled) => {
+                setSymmetryAxes(prev => ({ ...prev, [axis]: enabled }));
+              }}
+            />
+
+            <StatusOverlay
+              currentTool={currentTool}
+              selectedPrimitive={selectedPrimitive}
+            />
+          </>
+        )}
+      </div>
+
+      {/* Libadwaita About Window Dialog */}
+      <AboutDialog isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
     </div>
   );
 }

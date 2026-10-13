@@ -1,3 +1,5 @@
+import React from 'react';
+import { Info, HelpCircle } from 'lucide-react';
 import type { ToolType, PrimitiveType } from '../../types';
 import { getToolDefinition } from '../../services/tools/toolDefinitions';
 
@@ -6,59 +8,43 @@ interface StatusOverlayProps {
   selectedPrimitive: PrimitiveType;
 }
 
-export function StatusOverlay({ currentTool, selectedPrimitive }: StatusOverlayProps) {
+export const StatusOverlay: React.FC<StatusOverlayProps> = ({ currentTool, selectedPrimitive }) => {
   const toolDef = getToolDefinition(currentTool);
 
   return (
-    <div style={{
+    <div className="adw-card" style={{
       position: 'absolute',
-      bottom: 20,
-      left: 20,
-      backgroundColor: 'rgba(0,0,0,0.8)',
-      color: 'white',
-      padding: '15px',
-      borderRadius: '8px',
-      fontFamily: 'monospace',
+      bottom: 16,
+      left: 16,
+      maxWidth: '320px',
+      padding: '12px 16px',
+      zIndex: 100,
       fontSize: '12px',
-      minWidth: '250px',
+      lineHeight: 1.4,
     }}>
-      <div>
-        <strong>Current Tool:</strong> {toolDef.label}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, marginBottom: '4px' }}>
+        <Info size={14} color="var(--accent-color)" />
+        <span>{toolDef.label}</span>
       </div>
 
-      <div style={{ marginTop: '5px' }}>
-        {currentTool === 'select' && 'Click objects to select'}
-        {currentTool === 'add-primitive' && `Click and drag to place ${selectedPrimitive}`}
+      <div style={{ opacity: 0.85, marginBottom: '8px' }}>
+        {currentTool === 'select' && 'Click objects in the scene to select'}
+        {currentTool === 'add-primitive' && `Click and drag in viewport to place ${selectedPrimitive}`}
         {toolDef.helpText && currentTool !== 'select' && currentTool !== 'add-primitive' && toolDef.helpText}
       </div>
 
       <div style={{
-        marginTop: '10px',
-        paddingTop: '10px',
-        borderTop: '1px solid rgba(255,255,255,0.2)'
+        borderTop: '1px solid var(--card-border-color)',
+        paddingTop: '6px',
+        fontSize: '11px',
+        opacity: 0.7,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
       }}>
-        <div><strong>Camera Controls:</strong></div>
-        <div>Middle Click: Rotate</div>
-        <div>Right Click: Pan</div>
-        <div>Scroll: Zoom</div>
-      </div>
-
-      <div style={{
-        marginTop: '10px',
-        paddingTop: '10px',
-        borderTop: '1px solid rgba(255,255,255,0.2)'
-      }}>
-        <div><strong>Keyboard Shortcuts:</strong></div>
-        <div>S: Select tool</div>
-        <div>A: Add primitive</div>
-        <div>B: Add material</div>
-        {toolDef.isSculptingTool && (
-          <>
-            <div>[ / ]: Adjust brush size</div>
-            <div>Shift + [ / ]: Adjust strength</div>
-          </>
-        )}
+        <HelpCircle size={12} />
+        <span>Orbit: Middle Click • Pan: Right Click • Zoom: Scroll</span>
       </div>
     </div>
   );
-}
+};

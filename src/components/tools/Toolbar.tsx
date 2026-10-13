@@ -1,3 +1,17 @@
+import React from 'react';
+import {
+  MousePointer,
+  PlusCircle,
+  Plus,
+  Minus,
+  Move,
+  Maximize2,
+  Circle,
+  Square,
+  Database,
+  Triangle,
+  Disc,
+} from 'lucide-react';
 import type { PrimitiveType, ToolType } from '../../types';
 import { TOOL_DEFINITIONS, PRIMITIVE_DEFINITIONS } from '../../services/tools/toolDefinitions';
 
@@ -9,105 +23,121 @@ interface ToolbarProps {
   onPrimitiveSelect: (primitive: PrimitiveType) => void;
 }
 
-export function Toolbar({
+const getToolIcon = (toolId: ToolType) => {
+  switch (toolId) {
+    case 'select': return <MousePointer size={18} />;
+    case 'add-primitive': return <PlusCircle size={18} />;
+    case 'add': return <Plus size={18} />;
+    case 'subtract': return <Minus size={18} />;
+    case 'push': return <Move size={18} />;
+    case 'move': return <Move size={18} />;
+    case 'scale': return <Maximize2 size={18} />;
+    default: return <MousePointer size={18} />;
+  }
+};
+
+const getPrimitiveIcon = (primitiveId: PrimitiveType) => {
+  switch (primitiveId) {
+    case 'sphere': return <Circle size={18} />;
+    case 'cube': return <Square size={18} />;
+    case 'cylinder': return <Database size={18} />;
+    case 'cone': return <Triangle size={18} />;
+    case 'torus': return <Disc size={18} />;
+    default: return <Circle size={18} />;
+  }
+};
+
+export const Toolbar: React.FC<ToolbarProps> = ({
   currentTool,
   selectedPrimitive,
   selectedObjectId,
   onToolChange,
   onPrimitiveSelect,
-}: ToolbarProps) {
+}) => {
   const hasSelectedObject = selectedObjectId !== null;
 
   return (
     <div style={{
       position: 'absolute',
-      top: 20,
+      top: 16,
       left: '50%',
       transform: 'translateX(-50%)',
       display: 'flex',
       flexDirection: 'column',
-      gap: '15px',
+      alignItems: 'center',
+      gap: '10px',
       zIndex: 100,
     }}>
-      {/* Tool Selection */}
-      <div style={{
+      {/* Primary Tool Toolbar */}
+      <div className="adw-card" style={{
         display: 'flex',
-        gap: '5px',
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        padding: '10px',
-        borderRadius: '8px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+        alignItems: 'center',
+        padding: '6px 8px',
+        gap: '4px',
+        borderRadius: 'var(--adw-radius-pill)',
       }}>
         {TOOL_DEFINITIONS.map((tool) => {
           const isDisabled = tool.requiresObject && !hasSelectedObject;
+          const isActive = currentTool === tool.id;
+
           return (
             <button
               key={tool.id}
               onClick={() => !isDisabled && onToolChange(tool.id)}
               disabled={isDisabled}
+              className={`adw-btn pill ${isActive ? 'suggested-action' : 'flat'}`}
               style={{
-                width: '50px',
-                height: '50px',
-                backgroundColor: currentTool === tool.id ? '#4a90e2' :
-                                isDisabled ? '#1a1a1a' : '#2c2c2c',
-                border: 'none',
-                borderRadius: '6px',
-                color: isDisabled ? '#666' : 'white',
-                cursor: isDisabled ? 'not-allowed' : 'pointer',
+                padding: '8px 12px',
+                height: '38px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                fontSize: '20px',
-                opacity: isDisabled ? 0.5 : 1,
+                gap: '6px',
+                fontSize: '12px',
+                fontWeight: isActive ? 600 : 500,
               }}
               title={isDisabled ? `${tool.label} (Select an object first)` : tool.label}
             >
-              <span>{tool.icon}</span>
-              <span style={{ fontSize: '9px', marginTop: '2px' }}>{tool.label}</span>
+              {getToolIcon(tool.id)}
+              <span>{tool.label}</span>
             </button>
           );
         })}
       </div>
 
-      {/* Primitive Selection */}
+      {/* Primitive Sub-toolbar (When add-primitive tool is active) */}
       {currentTool === 'add-primitive' && (
-        <div style={{
+        <div className="adw-card" style={{
           display: 'flex',
-          gap: '5px',
-          backgroundColor: 'rgba(0,0,0,0.8)',
-          padding: '10px',
-          borderRadius: '8px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+          alignItems: 'center',
+          padding: '4px 6px',
+          gap: '4px',
+          borderRadius: 'var(--adw-radius-pill)',
+          animation: 'adw-pop-in 0.15s ease-out',
         }}>
-          {PRIMITIVE_DEFINITIONS.map((primitive) => (
-            <button
-              key={primitive.id}
-              onClick={() => onPrimitiveSelect(primitive.id)}
-              style={{
-                width: '45px',
-                height: '45px',
-                backgroundColor: selectedPrimitive === primitive.id ? '#4a90e2' : '#2c2c2c',
-                border: 'none',
-                borderRadius: '6px',
-                color: 'white',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s ease',
-                fontSize: '18px',
-              }}
-              title={primitive.label}
-            >
-              <span>{primitive.icon}</span>
-              <span style={{ fontSize: '8px', marginTop: '2px' }}>{primitive.label}</span>
-            </button>
-          ))}
+          {PRIMITIVE_DEFINITIONS.map((primitive) => {
+            const isActive = selectedPrimitive === primitive.id;
+            return (
+              <button
+                key={primitive.id}
+                onClick={() => onPrimitiveSelect(primitive.id)}
+                className={`adw-btn pill ${isActive ? 'suggested-action' : 'flat'}`}
+                style={{
+                  padding: '6px 10px',
+                  height: '34px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '11px',
+                }}
+                title={primitive.label}
+              >
+                {getPrimitiveIcon(primitive.id)}
+                <span>{primitive.label}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
   );
-}
+};
